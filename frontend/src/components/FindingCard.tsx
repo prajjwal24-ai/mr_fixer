@@ -121,6 +121,7 @@ export function FindingCard({ finding, rescanStatus }: FindingCardProps) {
           type="button"
           onClick={() => copyToClipboard(finding.element)}
           title="Copy selector"
+          aria-label="Copy element selector"
           style={{
             background: 'transparent',
             border: 'none',
@@ -144,6 +145,7 @@ export function FindingCard({ finding, rescanStatus }: FindingCardProps) {
           <button
             type="button"
             onClick={() => setShowSnippet(!showSnippet)}
+            aria-expanded={showSnippet}
             style={{
               background: 'transparent',
               border: 'none',

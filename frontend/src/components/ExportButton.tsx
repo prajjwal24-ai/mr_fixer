@@ -154,6 +154,7 @@ export function ExportButton({ report, rescanVerification }: ExportButtonProps) 
     <button
       type="button"
       onClick={handleExport}
+      aria-label={`Export audit report as JSON (${report.findings.length} finding${report.findings.length !== 1 ? 's' : ''})`}
       title={`Export audit report as JSON (${report.findings.length} finding${report.findings.length !== 1 ? 's' : ''})`}
       style={{
         display: 'inline-flex',

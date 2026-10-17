@@ -64,6 +64,7 @@ export function UrlBar({ url, setUrl, onSubmit, isLoading }: UrlBarProps) {
               if (validationError) setValidationError(null);
             }}
             placeholder="Enter public webpage URL (e.g. https://example.com)..."
+            aria-label="Webpage URL to audit"
             disabled={isLoading}
             style={{
               flex: 1,
