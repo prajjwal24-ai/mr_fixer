@@ -1,6 +1,7 @@
 import type { Page } from 'playwright';
 import type { AuditFinding } from '../types.js';
 import { generateFingerprint, getSuggestedFix } from './normalizer.js';
+import { getFindingGuidance } from './guidance.js';
 
 export interface MobileOverflowResult {
   isOverflowing: boolean;
@@ -107,6 +108,7 @@ export async function evaluateMobileOverflow(
 
     const evidence = `Document scrollWidth (${overflowData.scrollWidth}px) exceeds mobile viewport (${overflowData.viewportWidth}px) by ${overflowDiff}px. ${culpritDetail}`;
     const fingerprint = generateFingerprint('mobile-horizontal-overflow', culpritSelector, culpritSnippet);
+    const guidance = getFindingGuidance('mobile-horizontal-overflow', culpritSnippet, culpritSelector);
 
     return {
       fingerprint,
@@ -121,6 +123,12 @@ export async function evaluateMobileOverflow(
       suggestedFix: getSuggestedFix('mobile-horizontal-overflow'),
       confidence: 'definitive',
       requiresHumanReview: false,
+      helpUrl: guidance.helpUrl,
+      whatIsWrong: guidance.whatIsWrong,
+      whyItMatters: guidance.whyItMatters,
+      stepByStepFix: guidance.stepByStepFix,
+      codeExample: guidance.codeExample,
+      furtherGuidance: guidance.furtherGuidance,
     };
   } catch {
     // If layout measurement fails (e.g. unrenderable page), return null safely

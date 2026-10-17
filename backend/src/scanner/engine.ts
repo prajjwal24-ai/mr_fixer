@@ -5,6 +5,8 @@ import { validateUrl, type SecurityPolicy, PRODUCTION_SECURITY_POLICY } from '..
 import { validateHostDns } from '../security/dnsValidator.js';
 import { normalizeAxeViolations, calculateAuditSummary } from './normalizer.js';
 import { evaluateMobileOverflow } from './mobileOverflow.js';
+import { evaluateSeo } from './seoAudit.js';
+import { evaluateSecurityHeaders } from './securityDiagnostics.js';
 import { AppError } from '../middleware/errorHandler.js';
 import type { AuditReport, RescanReport, AuditFinding } from '../types.js';
 
@@ -165,7 +167,7 @@ export async function runAudit(
       const httpStatus = response.status();
       const loadTimeMs = Date.now() - startTime;
 
-      // Category A-E: Objective accessibility checks via axe-core
+      // Category 1: Deep accessibility checks via axe-core
       const targetRules = [
         'button-name',
         'input-button-name',
@@ -176,18 +178,76 @@ export async function runAudit(
         'color-contrast',
         'heading-order',
         'page-has-heading-one',
+        'link-name',
+        'html-has-lang',
+        'html-lang-valid',
+        'duplicate-id-active',
+        'landmark-one-main',
       ];
 
       const axeBuilder = new AxeBuilder({ page }).withRules(targetRules);
       const axeResults = await axeBuilder.analyze();
       const accessibilityFindings = normalizeAxeViolations(axeResults, finalUrl);
 
-      // Category Custom: Mobile horizontal overflow evaluator at 375px
+      // Category 2: Responsive layout evaluator at 375px
       const overflowFinding = await evaluateMobileOverflow(page, finalUrl);
 
-      const allFindings: AuditFinding[] = overflowFinding
-        ? [...accessibilityFindings, overflowFinding]
-        : accessibilityFindings;
+      // Category 3: Deterministic SEO and Page Quality checks
+      const seoFindings = await evaluateSeo(page, finalUrl);
+
+      // Category 4: Defensive HTTP Response Header Diagnostics
+      const securityFindings = evaluateSecurityHeaders(response.headers(), finalUrl);
+
+      // Category 5: Real-user Performance Diagnostics via Navigation Timing API
+      const perfMetrics = await page.evaluate(() => {
+        try {
+          const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+          if (navEntries && navEntries.length > 0) {
+            const entry = navEntries[0];
+            return {
+              ttfb: entry.responseStart - entry.requestStart,
+              domContentLoaded: entry.domContentLoadedEventEnd - entry.startTime,
+              loadComplete: entry.loadEventEnd - entry.startTime,
+            };
+          }
+        } catch {
+          // Fallback if Navigation Timing API unavailable
+        }
+        return null;
+      });
+
+      const performanceFindings: AuditFinding[] = [];
+      if (perfMetrics && perfMetrics.ttfb > 1800) {
+        performanceFindings.push({
+          fingerprint: `perf_ttfb_${Math.round(perfMetrics.ttfb)}`,
+          ruleId: 'performance-slow-ttfb',
+          category: 'performance',
+          severity: 'medium',
+          message: `Server Time to First Byte (TTFB) is slow: ${Math.round(perfMetrics.ttfb)}ms.`,
+          url: finalUrl,
+          element: 'Server Network / Response',
+          evidence: `Time to First Byte measured at ${Math.round(perfMetrics.ttfb)}ms (exceeds 1800ms threshold).`,
+          suggestedFix: 'Optimize server processing, database queries, and CDN edge caching to reduce Time to First Byte below 800ms.',
+          confidence: 'definitive',
+          requiresHumanReview: false,
+          helpUrl: 'https://web.dev/articles/ttfb',
+          whatIsWrong: 'The web server took an excessively long time to respond with the first byte of HTML.',
+          whyItMatters: 'Slow TTFB delays all browser rendering and can significantly hurt conversion rates and SEO rankings.',
+          stepByStepFix: [
+            'Audit backend database queries and external API calls required for initial HTML generation.',
+            'Implement an edge CDN (e.g. Cloudflare, AWS CloudFront) to cache HTML responses closer to users.',
+            'Enable HTTP/2 or HTTP/3 multiplexing and gzip/brotli payload compression.',
+          ],
+        });
+      }
+
+      const allFindings: AuditFinding[] = [
+        ...accessibilityFindings,
+        ...(overflowFinding ? [overflowFinding] : []),
+        ...seoFindings,
+        ...securityFindings,
+        ...performanceFindings,
+      ];
 
       const summary = calculateAuditSummary(allFindings);
 

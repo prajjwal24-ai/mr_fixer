@@ -71,10 +71,17 @@ export function FilterBar({
         </div>
 
         {/* Category Tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', background: 'rgba(15, 23, 42, 0.6)', padding: '0.25rem', borderRadius: '0.625rem', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-          {(['all', 'accessibility', 'layout'] as const).map((cat) => {
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', background: 'rgba(15, 23, 42, 0.6)', padding: '0.25rem', borderRadius: '0.625rem', border: '1px solid rgba(255, 255, 255, 0.06)', flexWrap: 'wrap' }}>
+          {(['all', 'accessibility', 'layout', 'seo', 'security', 'performance'] as const).map((cat) => {
             const isActive = selectedCategory === cat;
-            const label = cat === 'all' ? 'All Types' : cat === 'accessibility' ? 'Accessibility' : 'Layout';
+            const labels: Record<string, string> = {
+              all: 'All',
+              accessibility: 'A11y',
+              layout: 'Layout',
+              seo: 'SEO',
+              security: 'Security',
+              performance: 'Perf',
+            };
             return (
               <button
                 key={cat}
@@ -92,7 +99,7 @@ export function FilterBar({
                   transition: 'all 0.15s ease',
                 }}
               >
-                {label}
+                {labels[cat]}
               </button>
             );
           })}

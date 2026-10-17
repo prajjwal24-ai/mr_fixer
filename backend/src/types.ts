@@ -1,6 +1,22 @@
 export type FindingSeverity = 'critical' | 'high' | 'medium' | 'low';
-export type FindingCategory = 'accessibility' | 'layout';
+export type FindingCategory = 'accessibility' | 'layout' | 'seo' | 'security' | 'performance';
 export type FindingConfidence = 'definitive' | 'needs_review';
+
+export interface CodeExample {
+  before: string;
+  after: string;
+  explanation: string;
+}
+
+export interface FurtherGuidance {
+  simplerExplanation: string;
+  alternativeExample?: string;
+  frameworkGuidance?: {
+    react?: string;
+    vue?: string;
+    tailwind?: string;
+  };
+}
 
 export interface AuditFinding {
   fingerprint: string;
@@ -15,6 +31,12 @@ export interface AuditFinding {
   suggestedFix: string;
   confidence: FindingConfidence;
   requiresHumanReview: boolean;
+  helpUrl?: string;
+  whatIsWrong?: string;
+  whyItMatters?: string;
+  stepByStepFix?: string[];
+  codeExample?: CodeExample;
+  furtherGuidance?: FurtherGuidance;
 }
 
 export interface AuditSummary {
@@ -27,6 +49,9 @@ export interface AuditSummary {
   categories: {
     accessibility: number;
     layout: number;
+    seo?: number;
+    security?: number;
+    performance?: number;
   };
 }
 

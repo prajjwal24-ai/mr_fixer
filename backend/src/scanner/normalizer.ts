@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import type { AxeResults, Result as AxeResult, NodeResult } from 'axe-core';
+import { getFindingGuidance } from './guidance.js';
 import type {
   AuditFinding,
   FindingCategory,
@@ -71,6 +72,40 @@ export function getSuggestedFix(ruleId: string, snippet?: string): string {
     case 'page-has-heading-one':
       return 'Include a top-level <h1> heading on the page to communicate the primary title or purpose of the page to screen reader users.';
 
+    case 'link-name':
+      return 'Add discernible text or an aria-label attribute to the <a> tag explaining the link destination.';
+
+    case 'html-has-lang':
+    case 'html-lang-valid':
+      return 'Add a valid BCP 47 language code attribute to the <html> tag (e.g. <html lang="en">).';
+
+    case 'duplicate-id-active':
+      return 'Ensure all interactive or focusable elements have globally unique id attribute values.';
+
+    case 'landmark-one-main':
+      return 'Wrap the primary document contents in a single semantic <main> landmark element.';
+
+    case 'document-title':
+      return 'Add a descriptive, concise <title> inside the <head> element.';
+
+    case 'meta-description':
+      return 'Add a <meta name="description" content="..."> element inside the <head> with a summary of the page.';
+
+    case 'meta-viewport-scalable':
+      return 'Ensure the <meta name="viewport"> tag does not disable pinch-to-zoom (remove user-scalable=no and maximum-scale=1).';
+
+    case 'security-nosniff':
+      return 'Configure server responses to include the "X-Content-Type-Options: nosniff" security header.';
+
+    case 'security-clickjacking':
+      return 'Add "X-Frame-Options: SAMEORIGIN" or "Content-Security-Policy: frame-ancestors \'self\'" to protect against clickjacking.';
+
+    case 'security-hsts':
+      return 'Send the "Strict-Transport-Security: max-age=31536000; includeSubDomains" header on all HTTPS responses.';
+
+    case 'performance-slow-ttfb':
+      return 'Optimize server processing, database queries, and CDN edge caching to reduce Time to First Byte below 800ms.';
+
     case 'mobile-horizontal-overflow':
       return 'Eliminate horizontal overflow at mobile viewports by replacing fixed pixel widths (e.g., width: 600px) with responsive styles (e.g., max-width: 100%), applying box-sizing: border-box, or ensuring children do not exceed their parent container.';
 
@@ -120,6 +155,8 @@ export function normalizeAxeViolations(axeResults: AxeResults, pageUrl: string):
         ? node.failureSummary.replace(/^Fix (all|any) of the following:\s*/i, '').trim()
         : violation.help;
 
+      const guidance = getFindingGuidance(ruleId, snippet, selector, violation.helpUrl);
+
       findings.push({
         fingerprint,
         ruleId,
@@ -133,12 +170,20 @@ export function normalizeAxeViolations(axeResults: AxeResults, pageUrl: string):
         suggestedFix: getSuggestedFix(ruleId, snippet),
         confidence,
         requiresHumanReview,
+        helpUrl: guidance.helpUrl,
+        whatIsWrong: guidance.whatIsWrong,
+        whyItMatters: guidance.whyItMatters,
+        stepByStepFix: guidance.stepByStepFix,
+        codeExample: guidance.codeExample,
+        furtherGuidance: guidance.furtherGuidance,
       });
     }
   }
 
   return findings;
 }
+
+export { getFindingGuidance } from './guidance.js';
 
 /**
  * Calculates summary totals and category breakdowns from findings.
@@ -154,6 +199,9 @@ export function calculateAuditSummary(findings: AuditFinding[]): AuditSummary {
     categories: {
       accessibility: 0,
       layout: 0,
+      seo: 0,
+      security: 0,
+      performance: 0,
     },
   };
 
@@ -171,6 +219,12 @@ export function calculateAuditSummary(findings: AuditFinding[]): AuditSummary {
       summary.categories.accessibility++;
     } else if (finding.category === 'layout') {
       summary.categories.layout++;
+    } else if (finding.category === 'seo') {
+      summary.categories.seo = (summary.categories.seo || 0) + 1;
+    } else if (finding.category === 'security') {
+      summary.categories.security = (summary.categories.security || 0) + 1;
+    } else if (finding.category === 'performance') {
+      summary.categories.performance = (summary.categories.performance || 0) + 1;
     }
   }
 

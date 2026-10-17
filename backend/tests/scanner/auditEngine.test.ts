@@ -18,12 +18,17 @@ describe('Deterministic Audit Engine Integration Tests', () => {
       const url = req.url || '/';
 
       if (url === '/clean-page') {
-        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.writeHead(200, {
+          'Content-Type': 'text/html',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'SAMEORIGIN',
+        });
         res.end(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A clean, fully accessible test page designed to pass all quality audits.">
   <title>Clean Accessible Webpage</title>
   <style>
     body { font-family: sans-serif; color: #111111; background-color: #ffffff; margin: 0; padding: 20px; }
@@ -32,7 +37,7 @@ describe('Deterministic Audit Engine Integration Tests', () => {
   </style>
 </head>
 <body>
-  <div class="container">
+  <main class="container">
     <h1>Clean Page Header</h1>
     <h2>Section One</h2>
     <p>High contrast text on pure white background.</p>
@@ -43,7 +48,7 @@ describe('Deterministic Audit Engine Integration Tests', () => {
     </form>
     <img src="data:image/svg+xml,<svg></svg>" alt="Informative illustration">
     <img src="data:image/svg+xml,<svg></svg>" alt="" role="presentation">
-  </div>
+  </main>
 </body>
 </html>`);
         return;
@@ -202,6 +207,16 @@ describe('Deterministic Audit Engine Integration Tests', () => {
     expect(overflowFinding?.category).toBe('layout');
     expect(overflowFinding?.severity).toBe('high');
     expect(overflowFinding?.evidence).toContain('exceeds mobile viewport');
+
+    // Verify rich repair guidance fields on findings
+    expect(buttonFinding?.whatIsWrong).toBeDefined();
+    expect(buttonFinding?.whyItMatters).toBeDefined();
+    expect(buttonFinding?.stepByStepFix?.length).toBeGreaterThan(0);
+    expect(buttonFinding?.codeExample?.before).toBeDefined();
+    expect(buttonFinding?.codeExample?.after).toBeDefined();
+
+    expect(overflowFinding?.whatIsWrong).toBeDefined();
+    expect(overflowFinding?.stepByStepFix?.length).toBeGreaterThan(0);
   });
 
   it('produces 100% stable deterministic fingerprints across repeated scans', async () => {
