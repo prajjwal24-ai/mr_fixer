@@ -1,11 +1,13 @@
 import { AlertCircle, AlertTriangle, Info, Clock, CheckCircle2, Eye } from 'lucide-react';
-import type { AuditReport } from '../types.ts';
+import type { AuditReport, RescanVerification } from '../types.ts';
+import { ExportButton } from './ExportButton.tsx';
 
 interface AuditSummaryCardsProps {
   report: AuditReport;
+  rescanVerification: RescanVerification | null;
 }
 
-export function AuditSummaryCards({ report }: AuditSummaryCardsProps) {
+export function AuditSummaryCards({ report, rescanVerification }: AuditSummaryCardsProps) {
   const { summary, pageTitle, finalUrl, loadTimeMs, httpStatus } = report;
 
   return (
@@ -33,6 +35,7 @@ export function AuditSummaryCards({ report }: AuditSummaryCardsProps) {
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94a3b8', background: 'rgba(255, 255, 255, 0.05)', padding: '0.25rem 0.625rem', borderRadius: '0.375rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <Clock size={13} /> {loadTimeMs}ms
           </span>
+          <ExportButton report={report} rescanVerification={rescanVerification} />
         </div>
       </div>
 
@@ -90,6 +93,19 @@ export function AuditSummaryCards({ report }: AuditSummaryCardsProps) {
           </div>
         </div>
 
+        {/* Low */}
+        <div className="glass-panel" style={{ borderRadius: '0.75rem', padding: '1rem', borderLeft: '3px solid #64748b' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>
+            <Info size={14} /> Low
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#94a3b8', marginTop: '0.25rem' }}>
+            {summary.low}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+            Minor advisory issues
+          </div>
+        </div>
+
         {/* Needs Human Review */}
         <div className="glass-panel" style={{ borderRadius: '0.75rem', padding: '1rem', borderLeft: '3px solid #a855f7' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 600, color: '#a855f7', textTransform: 'uppercase' }}>
@@ -106,3 +122,4 @@ export function AuditSummaryCards({ report }: AuditSummaryCardsProps) {
     </div>
   );
 }
+

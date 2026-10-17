@@ -6,7 +6,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30s timeout matching backend scan limits
+  timeout: 45000, // 45s — backend scans can take up to 25s; extra margin for network latency
 });
 
 /**
